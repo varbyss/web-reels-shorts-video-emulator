@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Shorts Emulator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    input[type="file"] { display: none; }
+    input[type="range"] { accent-color: white; }
+    .setting-block { display: flex; flex-direction: column; gap: 4px; }
+    .row { display: flex; align-items: center; gap: 6px; }
+    .row input[type="range"] { flex-grow: 1; }
+    .row input[type="number"] {
+      width: 60px;
+      font-size: 0.75rem;
+      background: #111827;
+      color: white;
+      text-align: right;
+      border: 1px solid #374151;
+      border-radius: 4px;
+      padding: 2px 4px;
+    }
+    .icon-btn {
+      background: #374151;
+      padding: 6px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .icon-btn:hover { background: #4b5563; }
+    svg { width: 20px; height: 20px; stroke: white; }
+    .settings-panel { display: flex; flex-direction: column; gap: 1rem; }
+  </style>
+</head>
+<body id="bodyBg" class="min-h-screen bg-gray-900 text-white overflow-hidden">
+
+  <!-- Mockup -->
+  <div class="flex justify-center items-center min-h-screen">
+    <div id="mockupWrapper" style="transform: scale(1) translate(0px,0px);">
+      <div id="mockupContainer" class="relative flex items-center justify-center" style="width:400px; height:820px;">
+        <div id="videoContainer" class="absolute inset-[22px] flex items-center justify-center">
+          <div class="w-full h-full overflow-hidden rounded-[48px] bg-black">
+            <video id="tiktokVideo"
+              class="w-full h-full"
+              style="object-fit:cover; aspect-ratio:9/16; transform:scale(1.03) translate(0px,0px);"
+              autoplay loop playsinline></video>
+          </div>
+        </div>
+        <img id="mockupImage" src="ip14pro-mockup.png"
+             class="absolute top-0 left-0 w-full h-full object-contain pointer-events-none select-none z-10" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="fixed bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 pointer-events-none w-full max-w-xl px-4">
+    <div class="w-full flex items-center gap-2 pointer-events-auto">
+      <button id="playPauseBtn" class="icon-btn">
+        <svg id="playPauseIcon" fill="none" viewBox="0 0 24 24" stroke-width="2">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+      </button>
+      <span id="currentTime" class="text-xs font-mono">0:00</span>
+      <input id="progressBar" type="range" min="0" value="0" step="0.1" class="flex-grow h-1 cursor-pointer">
+      <span id="totalTime" class="text-xs font-mono">0:00</span>
+    </div>
+    <div id="filenameDisplay" class="px-3 py-1 bg-black bg-opacity-70 text-white rounded-md text-sm max-w-[90%] text-center truncate pointer-events-none"></div>
+    <div class="flex items-center gap-3 pointer-events-auto">
+      <button id="prevBtn" class="icon-btn">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <button id="muteBtn" class="icon-btn">
+        <svg id="muteIcon" fill="none" viewBox="0 0 24 24" stroke-width="2">
+          <path d="M11 5L6 9H2v6h4l5 4V5z M15 9a5 5 0 010 6"/>
+        </svg>
+      </button>
+      <button id="nextBtn" class="icon-btn">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="fixed top-1/2 right-8 -translate-y-1/2 bg-gray-800 bg-opacity-80 rounded-xl p-4 shadow-lg w-80 max-h-[90vh] overflow-y-auto">
+    <div class="settings-panel">
+
+      <h2 class="text-base font-bold">⚙ Settings</h2>
+
+      <!-- Folder -->
+      <div class="flex items-center gap-2">
+        <button id="selectFolderBtn" class="icon-btn">
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path d="M3 7h5l2 3h11v11H3z"/></svg>
+        </button>
+        <span>Change Folder</span>
+      </div>
+      <input id="fileInput" type="file" webkitdirectory directory multiple accept="video/*" />
+
+      <!-- Sliders -->
+      <div id="sliders"></div>
+
+      <!-- Background -->
+      <div class="setting-block">
+        <label>Background</label>
+        <div class="flex gap-2 items-center">
+          <input id="bgColorPicker" type="color" value="#111827">
+          <button id="resetBg" class="icon-btn">Reset</button>
+        </div>
+        <div class="flex gap-2 items-center">
+          <input id="gradientToggle" type="checkbox">
+          <span>Gradient</span>
+        </div>
+        <div id="gradientSettings" class="hidden flex flex-col gap-2">
+          <div class="flex gap-2">
+            <input id="gradColor1" type="color" value="#111827">
+            <input id="gradColor2" type="color" value="#1f2937">
+          </div>
+          <select id="gradDirection" class="bg-gray-900 text-white rounded p-1 text-xs">
+            <option value="to right">Left → Right</option>
+            <option value="to bottom">Top → Bottom</option>
+            <option value="to top right">Diagonal</option>
+            <option value="circle">Radial</option>
+          </select>
+          <button id="resetGradient" class="icon-btn">Reset Gradient</button>
+        </div>
+      </div>
+
+      <!-- Mockup -->
+      <div class="flex items-center gap-2">
+        <button id="mockupFileBtn" class="icon-btn">
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="2"><path d="M12 5l9 4-9 4-9-4 9-4zm0 14V9"/></svg>
+        </button>
+        <span>Change Mockup</span>
+      </div>
+      <input id="mockupFileInput" type="file" accept="image/*" />
+      <button id="resetMockupImg" class="icon-btn">Reset Mockup</button>
+
+    </div>
+
+    <!-- Reset All -->
+    <div class="sticky bottom-0 left-0 bg-gray-900 p-2 mt-4 rounded-md">
+      <button id="resetAll" class="w-full bg-red-600 hover:bg-red-700 text-white py-1 rounded">Reset All</button>
+    </div>
+  </div>
+
+  <script>
+    const videoEl = document.getElementById("tiktokVideo");
+    const playPauseBtn = document.getElementById("playPauseBtn");
+    const playPauseIcon = document.getElementById("playPauseIcon");
+    const progressBar = document.getElementById("progressBar");
+    const currentTimeEl = document.getElementById("currentTime");
+    const totalTimeEl = document.getElementById("totalTime");
+    const muteBtn = document.getElementById("muteBtn");
+    const muteIcon = document.getElementById("muteIcon");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const filenameDisplay = document.getElementById("filenameDisplay");
+    const mockupWrapper = document.getElementById("mockupWrapper");
+    const mockupImage = document.getElementById("mockupImage");
+    const videoContainer = document.getElementById("videoContainer");
+    const body = document.getElementById("bodyBg");
+
+    let videoFiles = [], currentIndex = 0;
+
+    const defaults = {
+      globalScale: 1, globalX: 0, globalY: 0,
+      mockupScale: 1, mockupX: 0, mockupY: 0,
+      videoContainerScale: 1, videoContainerX: 0, videoContainerY: 0,
+      innerScale: 1.03, innerX: 0, innerY: 0,
+      bg: "#111827",
+      grad1: "#111827", grad2: "#1f2937", gradDir: "to right"
+    };
+
+    // Video player
+    function formatTime(sec) {
+      if (!sec) return "0:00";
+      const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+      return `${m}:${s.toString().padStart(2,"0")}`;
+    }
+    videoEl.addEventListener("loadedmetadata", () => {
+      progressBar.max = videoEl.duration;
+      totalTimeEl.textContent = formatTime(videoEl.duration);
+    });
+    videoEl.addEventListener("timeupdate", () => {
+      progressBar.value = videoEl.currentTime;
+      currentTimeEl.textContent = formatTime(videoEl.currentTime);
+    });
+    playPauseBtn.onclick = () => {
+      if (videoEl.paused) {
+        videoEl.play();
+        playPauseIcon.innerHTML = '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>';
+      } else {
+        videoEl.pause();
+        playPauseIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+      }
+    };
+    progressBar.oninput = () => videoEl.currentTime = progressBar.value;
+    muteBtn.onclick = () => {
+      videoEl.muted = !videoEl.muted;
+      muteIcon.innerHTML = videoEl.muted
+        ? '<path d="M11 5L6 9H2v6h4l5 4V5z M19 5L5 19"/>'
+        : '<path d="M11 5L6 9H2v6h4l5 4V5z M15 9a5 5 0 010 6"/>';
+    };
+    nextBtn.onclick = () => { currentIndex=(currentIndex+1)%videoFiles.length; showVideo(currentIndex); };
+    prevBtn.onclick = () => { currentIndex=(currentIndex-1+videoFiles.length)%videoFiles.length; showVideo(currentIndex); };
+    document.addEventListener("wheel", e => { if(e.deltaY>0) nextBtn.onclick(); else prevBtn.onclick(); });
+
+    function showVideo(idx) {
+      const f = videoFiles[idx];
+      if (!f) return;
+      videoEl.src = URL.createObjectURL(f);
+      filenameDisplay.textContent = f.name;
+      videoEl.play();
+    }
+
+    // Folder
+    document.getElementById("selectFolderBtn").onclick = ()=>document.getElementById("fileInput").click();
+    document.getElementById("fileInput").onchange = e=>{
+      videoFiles = Array.from(e.target.files).filter(f=>/\.(mp4|webm|mov|mkv)$/i.test(f.name));
+      if(videoFiles.length){ currentIndex=0; showVideo(currentIndex); }
+    };
+
+    // Sliders setup
+    const sliders = [
+      {id:"globalScale",label:"Global Scale",min:0.01,max:10,step:0.05,target:v=>mockupWrapper.style.transform=`scale(${v}) translate(${state.globalX}px,${state.globalY}px)`},
+      {id:"globalX",label:"Global Pos X",min:-5000,max:5000,step:1,target:v=>mockupWrapper.style.transform=`scale(${state.globalScale}) translate(${v}px,${state.globalY}px)`},
+      {id:"globalY",label:"Global Pos Y",min:-5000,max:5000,step:1,target:v=>mockupWrapper.style.transform=`scale(${state.globalScale}) translate(${state.globalX}px,${v}px)`},
+      {id:"mockupScale",label:"Mockup Scale",min:0.01,max:10,step:0.01,target:v=>mockupImage.style.transform=`scale(${v}) translate(${state.mockupX}px,${state.mockupY}px)`},
+      {id:"mockupX",label:"Mockup Pos X",min:-5000,max:5000,step:1,target:v=>mockupImage.style.transform=`scale(${state.mockupScale}) translate(${v}px,${state.mockupY}px)`},
+      {id:"mockupY",label:"Mockup Pos Y",min:-5000,max:5000,step:1,target:v=>mockupImage.style.transform=`scale(${state.mockupScale}) translate(${state.mockupX}px,${v}px)`},
+      {id:"videoContainerScale",label:"Video Container Scale",min:0.05,max:10,step:0.01,target:v=>videoContainer.style.transform=`scale(${v}) translate(${state.videoContainerX}px,${state.videoContainerY}px)`},
+      {id:"videoContainerX",label:"Video Container Pos X",min:-5000,max:5000,step:1,target:v=>videoContainer.style.transform=`scale(${state.videoContainerScale}) translate(${v}px,${state.videoContainerY}px)`},
+      {id:"videoContainerY",label:"Video Container Pos Y",min:-5000,max:5000,step:1,target:v=>videoContainer.style.transform=`scale(${state.videoContainerScale}) translate(${state.videoContainerX}px,${v}px)`},
+      {id:"innerScale",label:"Inner Video Zoom",min:0.01,max:10,step:0.01,target:v=>videoEl.style.transform=`scale(${v}) translate(${state.innerX}px,${state.innerY}px)`},
+      {id:"innerX",label:"Inner Video Pos X",min:-5000,max:5000,step:1,target:v=>videoEl.style.transform=`scale(${state.innerScale}) translate(${v}px,${state.innerY}px)`},
+      {id:"innerY",label:"Inner Video Pos Y",min:-5000,max:5000,step:1,target:v=>videoEl.style.transform=`scale(${state.innerScale}) translate(${state.innerX}px,${v}px)`}
+    ];
+    const state = {...defaults};
+    const container = document.getElementById("sliders");
+    sliders.forEach(s=>{
+      const block=document.createElement("div");block.className="setting-block";
+      const lab=document.createElement("label");lab.textContent=s.label;block.appendChild(lab);
+      const row=document.createElement("div");row.className="row";
+      const rng=document.createElement("input");rng.type="range";rng.min=s.min;rng.max=s.max;rng.step=s.step;rng.value=defaults[s.id];
+      const num=document.createElement("input");num.type="number";num.step=s.step;num.value=defaults[s.id];
+      row.appendChild(rng);row.appendChild(num);block.appendChild(row);container.appendChild(block);
+      const update=v=>{state[s.id]=parseFloat(v);rng.value=v;num.value=v;s.target(parseFloat(v));};
+      rng.addEventListener("input",e=>update(e.target.value));
+      num.addEventListener("input",e=>update(e.target.value));
+      rng.addEventListener("dblclick",()=>update(defaults[s.id]));
+      num.addEventListener("dblclick",()=>update(defaults[s.id]));
+      update(defaults[s.id]);
+    });
+
+    // Background
+    const bgPicker=document.getElementById("bgColorPicker");
+    const gradToggle=document.getElementById("gradientToggle");
+    const gradSettings=document.getElementById("gradientSettings");
+    const grad1=document.getElementById("gradColor1");
+    const grad2=document.getElementById("gradColor2");
+    const gradDir=document.getElementById("gradDirection");
+    function applyBg(){
+      if(gradToggle.checked){
+        if(gradDir.value==="circle") body.style.background=`radial-gradient(circle, ${grad1.value}, ${grad2.value})`;
+        else body.style.background=`linear-gradient(${gradDir.value}, ${grad1.value}, ${grad2.value})`;
+      } else body.style.background=bgPicker.value;
+    }
+    bgPicker.oninput=applyBg;
+    gradToggle.onchange=()=>{gradSettings.classList.toggle("hidden",!gradToggle.checked);applyBg();};
+    grad1.oninput=applyBg;grad2.oninput=applyBg;gradDir.oninput=applyBg;
+    document.getElementById("resetBg").onclick=()=>{bgPicker.value=defaults.bg;applyBg();};
+    document.getElementById("resetGradient").onclick=()=>{grad1.value=defaults.grad1;grad2.value=defaults.grad2;gradDir.value=defaults.gradDir;applyBg();};
+
+    // Mockup
+    document.getElementById("mockupFileBtn").onclick = () => 
+      document.getElementById("mockupFileInput").click();
+
+    document.getElementById("mockupFileInput").onchange = e => {
+      const file = e.target.files[0];
+      if (file) mockupImage.src = URL.createObjectURL(file);
+    };
+
+    document.getElementById("resetMockupImg").onclick = () => {
+      mockupImage.src = "ip14pro-mockup.png";
+    };
+
+    // Reset All
+    document.getElementById("resetAll").onclick = () => {
+      // Reset sliders
+      sliders.forEach(s => {
+        state[s.id] = defaults[s.id];
+        const block = container.querySelector(`input[type="range"][value="${s.min}"]`) 
+        // easier: just rerun update() with defaults
+      });
+      // Quick way: reload page to restore defaults
+      location.reload();
+    };
+  </script>
+</body>
+</html>
